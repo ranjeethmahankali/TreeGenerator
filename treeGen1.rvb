@@ -8,7 +8,7 @@ Sub Main()
 	
 	'Call AddTaperPipe(curID, 2, 0.5)
 	'pr = Array(minTwigs, maxTwigs, maxTln, TlnF, maxAng, AngF, maxGen)
-	Dim pr : pr = Array(1, 7, 20, 0.9, 30, 1.8, 5)
+	Dim pr : pr = Array(1, 7, 20, 0.9, 30, 0.9, 5)
 	
 	'Dim pt : pt = Rhino.GetPoint("Plant Tree")
 	Rhino.EnableRedraw(False)

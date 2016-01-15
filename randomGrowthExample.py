@@ -26,8 +26,8 @@ stepLength = 4
 
 rs.EnableRedraw(False)
 i = 0
-while i < 10000:
-	randPt = placePt(-50,50,-200,200,0,100)
+while i < 5000:
+	randPt = placePt(-50,50,-50,50,0,100)
 	addToGrowth(randPt, growth)
 	i += 1
 

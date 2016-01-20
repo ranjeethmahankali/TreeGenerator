@@ -1,0 +1,135 @@
+Option Explicit
+'Script written by Ranjeeth Mahankali
+'Script version 20 May 2015
+
+Call Main()
+Sub Main()
+	Rhino.Command "_SelAll _Delete"
+	
+	'Call AddTaperPipe(curID, 2, 0.5)
+	'pr = Array(minTwigs, maxTwigs, maxTln, TlnF, maxAng, AngF, maxGen)
+	Dim pr : pr = Array(1, 7, 20, 0.9, 30, 0.9, 5)
+	
+	'Dim pt : pt = Rhino.GetPoint("Plant Tree")
+	Rhino.EnableRedraw(False)
+	'Call GrowTwigs(pt, Array(0, 0, 1), 1, pr, 2)
+	Call GrowTwigs(Array(0, 0, 0), Array(0, 0, 1), 1, pr, 2)
+	Rhino.EnableRedraw(True)
+	'Main()
+End Sub
+
+Function AddVector(ByVal ptBase, ByVal vec)
+	Dim ptTip : ptTip = Rhino.PointAdd(ptBase, vec)
+	
+	AddVector = Rhino.AddLine(ptBase, ptTip)
+	
+	Call Rhino.CurveArrows(AddVector, 2)
+End Function
+
+Function AddArcDir(ByVal vDir, ByVal pt1, ByVal pt2)
+	AddArcDir = Null
+	Dim vBase : vBase = Rhino.PointSubtract(pt2, pt1)
+	Dim D : D = Rhino.VectorLength(vBase)
+	If D = 0 Then Exit Function
+	If Rhino.IsVectorParallelTo(vBase, vDir) Then Exit Function
+	
+	vDir = Rhino.VectorUnitize(vDir)
+	vBase = Rhino.VectorUnitize(vBase)
+	Dim vBi : vBi = Rhino.VectorUnitize(Rhino.VectorAdd(vDir, vBase))
+	
+	Dim cosAng : cosAng = Rhino.VectorDotProduct(vBi, vBase)
+	Dim ln : ln = (0.5 * D) / cosAng
+	
+	vBi = Rhino.VectorScale(vBi, ln)
+	Dim ID : ID = Rhino.AddArc3Pt(pt1, pt2, Rhino.PointAdd(pt1, vBi))
+	'Rhino.Print("here " & ID)
+	If IsNull(ID) Then Call Rhino.Print("Shit")
+	'Call Rhino.Print(ID)
+	AddArcDir = ID
+End Function
+
+Function TwigEndPoint(ByVal Origin, ByVal Dir, ByVal minL, ByVal maxL, ByVal maxAng)
+	Dim vTwig
+	
+	vTwig = Rhino.VectorUnitize(Dir)
+	vTwig = Rhino.VectorScale(vTwig, minL + Rnd() * (maxL - minL))
+	
+	'Rhino.Print("this is it " & Rhino.Pt2Str(Origin))
+	Dim mutPlane : mutPlane = Rhino.PlaneFromNormal(Origin, vTwig)
+	
+	vTwig = Rhino.VectorRotate(vTwig, 2 + (Rnd() * (maxAng - 5)), mutPlane(1))
+	vTwig = Rhino.VectorRotate(vTwig, Rnd() * 360, Dir)
+	
+	TwigEndPoint = Rhino.PointAdd(Origin, vTwig)
+End Function
+
+Sub GrowTwigs(ByVal ptStart, ByVal Dir, ByVal gen, ByVal pr(), ByVal R)
+	If gen > pr(6) Then Exit Sub
+	
+	Dim i, ptGrow
+	Dim newpr : newpr = pr
+	Dim ln : ln = pr(2)
+	Dim Ang : Ang = pr(4)
+	
+	Dim maxR : maxR = R - ((gen - 1) * (R - 0.01) / pr(6))
+	Dim minR : minR = R - (gen * (R - 0.01) / pr(6))
+	
+	newpr(2) = pr(2) * pr(3)
+	newpr(4) = pr(4) * pr(5)
+	'Call AddVector(ptNode, newDir)
+	Dim twigN : twigN = Int(pr(0) + Rnd() * (pr(1) - pr(0)))
+	For i = 1 To twigN Step 1
+		ptGrow = TwigEndPoint(ptStart, Dir, 0.5 * ln, ln, Ang)
+		Dim ArcID : ArcID = AddArcDir(Dir, ptStart, ptGrow)
+		'Call AddArcDir(Dir, ptStart, ptGrow)
+		If IsNull(ArcID) Then
+			Call Rhino.AddPoint(ptStart)
+			Call Rhino.AddPoint(ptGrow)
+			Call AddVector(ptStart, Rhino.VectorScale(Dir, 20))
+			Call Rhino.Print("Shit2")
+		End If
+		Call AddTaperPipe(ArcID, maxR, minR)
+		Call Rhino.DeleteObject(ArcID)
+		
+		Dim ptDir : ptDir = Mirror(Dir, Rhino.PointSubtract(ptGrow, ptStart))
+		Call GrowTwigs(ptGrow, ptDir, gen + 1, newpr, R)
+	Next
+End Sub
+
+Function Mirror(ByVal vec, ByVal mirVec)'mirrors vec about mirVec and returns
+	Dim vecLn : vecLn = Rhino.Distance(Array(0, 0, 0), vec)
+	vec = Rhino.VectorUnitize(vec)
+	mirVec = Rhino.VectorUnitize(mirVec)
+
+	Dim dot : dot = Rhino.VectorDotProduct(vec, mirVec)
+	mirVec = Rhino.VectorScale(mirVec, 2 * dot)
+	
+	Mirror = Rhino.VectorScale(Rhino.PointSubtract(mirVec, vec), vecLn)
+End Function
+
+Function AddTaperPipe(ByVal railID, ByVal Rad1, ByVal Rad2)
+	Dim crDom : crDom = Rhino.CurveDomain(railID)
+	Dim ptStart, ptEnd, tnStart, tnEnd
+	Dim cirID(1)
+	Dim cPlane
+	Dim rotAxis, rotAng
+	
+	ptStart = Rhino.EvaluateCurve(railID, crDom(0))
+	ptEnd = Rhino.EvaluateCurve(railID, crDom(1))
+	tnStart = Rhino.VectorUnitize(Rhino.CurveTangent(railID, crDom(0)))
+	tnEnd = Rhino.VectorUnitize(Rhino.CurveTangent(railID, crDom(1)))
+	rotAxis = Rhino.VectorCrossProduct(tnStart, tnEnd)
+	rotAng = Rhino.ToDegrees(Rhino.ACos(Rhino.VectorDotProduct(tnStart, tnEnd)))
+	
+	cPlane = Rhino.PlaneFromNormal(ptStart, tnStart)
+	cirID(0) = Rhino.AddCircle(cPlane, Rad1)
+	'Call AddVector(ptStart, tnStart)
+	cPlane = Rhino.MovePlane(cPlane, ptEnd)
+	cPlane = Rhino.RotatePlane(cPlane, rotAng, rotAxis)
+	cirID(1) = Rhino.AddCircle(cPlane, Rad2)
+	'Call AddVector(ptEnd, tnEnd)
+	AddTaperPipe = Rhino.AddSweep1(railID, cirID)
+	
+	Rhino.DeleteObject(cirID(0))
+	Rhino.DeleteObject(cirID(1))
+End Function

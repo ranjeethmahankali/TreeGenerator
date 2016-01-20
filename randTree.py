@@ -33,7 +33,8 @@ class tree:
 		#they will be initialized as final variables which are shared among all objects of this class
 		self.node = [basePt]
 		self.twig = []
-		self.structure = [[]] #this variable contains the entire tree structure
+		self.childOf = [[]] #this variable contains the entire tree structure as a list of children of each node
+		self.parentOf = [None]
 		
 		self.folDensity = fD
 		self.treeVol = self.size[0]*self.size[1]*self.size[1]
@@ -46,9 +47,10 @@ class tree:
 	#this function only adds to the data but not to the actual 3d space
 	def addTwig(self, joinNode, newNode):
 		joinIndex = self.node.index(joinNode)
-		self.structure[joinIndex].append(len(self.node))
+		self.childOf[joinIndex].append(len(self.node))
+		self.parentOf.append(joinIndex)
 		self.node.append(newNode)
-		self.structure.append([])
+		self.childOf.append([])
 	
 	#this function grows the tree completely and stores the data in self.node and self. structure
 	def grow(self):
@@ -73,9 +75,9 @@ class tree:
 		i = 0
 		while i < len(self.node):
 			j = 0
-			while j < len(self.structure[i]):
+			while j < len(self.childOf[i]):
 				joinPt = self.node[i]
-				newPt = self.node[self.structure[i][j]]
+				newPt = self.node[self.childOf[i][j]]
 				self.twig.append(rs.AddLine(joinPt, newPt))
 				j += 1
 			
@@ -94,6 +96,6 @@ rs.EnableRedraw(False)
 
 newTree = tree([0,0,0], [100,100], 2, 1)
 newTree.render()
-newTree.delete()
+#newTree.delete()
 
 rs.EnableRedraw(True)

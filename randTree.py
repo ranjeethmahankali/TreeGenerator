@@ -24,8 +24,8 @@ class tree:
 	folDensity = 1
 	treeVol = size[0]*size[1]*size[1]
 	twigCount = treeVol*folDensity/(1000*segLength)
-	#this is the structure of the tree
 	
+	#htis function initializes the tree with the given parameters
 	def __init__(self, basePt, sz, segL, fD):
 		self.size = sz
 		self.segLength = segL
@@ -42,15 +42,15 @@ class tree:
 		self.treeID = rs.AddGroup()
 		self.grow()
 	
+	#this function adds a new twig to the tree joining joinNode and newNode
+	#this function only adds to the data but not to the actual 3d space
 	def addTwig(self, joinNode, newNode):
 		joinIndex = self.node.index(joinNode)
 		self.structure[joinIndex].append(len(self.node))
 		self.node.append(newNode)
 		self.structure.append([])
-		
-		#self.twig.append(rs.AddLine(joinNode, newNode))
 	
-	#this function grows the tree completely
+	#this function grows the tree completely and stores the data in self.node and self. structure
 	def grow(self):
 		x1 = self.node[0][0] - (self.size[1]/2)
 		x2 = self.node[0][0] + (self.size[1]/2)
@@ -68,6 +68,7 @@ class tree:
 			self.addTwig(joinPt, newPt)
 			i += 1
 	
+	#this function renders the tree from teh data stored in the self.structure
 	def render(self):
 		i = 0
 		while i < len(self.node):
@@ -82,15 +83,17 @@ class tree:
 		
 		rs.AddObjectsToGroup(self.twig, self.treeID)
 	
+	#this function deletes the entire tree
+	#this essentially uninitializes it so it has to grown again to be rendered
 	def delete(self):
+		rs.RemoveObjectsFromGroup(self.twig, self.treeID)
 		rs.DeleteObjects(self.twig)
-		rs.DeleteGroup(self.treeID)
 		self.node = None
-		self = None		
 
 rs.EnableRedraw(False)
+
 newTree = tree([0,0,0], [100,100], 2, 1)
 newTree.render()
-#newTree.delete()
-#otherTree = tree([100,100,0], [100,100], 2, 1)
+newTree.delete()
+
 rs.EnableRedraw(True)

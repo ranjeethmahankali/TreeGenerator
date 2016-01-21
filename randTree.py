@@ -35,6 +35,7 @@ class tree:
 		self.twig = []
 		self.childOf = [[]] #this variable contains the entire tree structure as a list of children of each node
 		self.parentOf = [None]
+		self.branch = []
 		
 		self.folDensity = fD
 		self.treeVol = self.size[0]*self.size[1]*self.size[1]
@@ -70,6 +71,25 @@ class tree:
 			self.addTwig(joinPt, newPt)
 			i += 1
 	
+	#this function makes branches
+	def makeBranches(self):
+		i = 1
+		while i < len(self.childOf):
+			if len(self.childOf[i]) == 0:
+				newBranch = []
+				curNode = i
+				while True:
+					print('hello')
+					newBranch.append(curNode)
+					curNode = self.parentOf[curNode]
+					
+					if len(self.childOf[self.parentOf[curNode]]) > 1:
+						newBranch.append(curNode)
+						break
+						
+				self.branch.append(newBranch)
+			i += 1
+	
 	#this function renders the tree from teh data stored in the self.structure
 	def render(self):
 		i = 0
@@ -85,17 +105,28 @@ class tree:
 		
 		rs.AddObjectsToGroup(self.twig, self.treeID)
 	
+	def renderBranch(self, br):
+		brPt = []
+		i = 0
+		while i < len(br):
+			brPt.append(self.node[br[i]])
+		rs.AddPolyline(brPt, True)
+	
 	#this function deletes the entire tree
 	#this essentially uninitializes it so it has to grown again to be rendered
 	def delete(self):
 		rs.RemoveObjectsFromGroup(self.twig, self.treeID)
 		rs.DeleteObjects(self.twig)
 		self.node = None
-
+			
 rs.EnableRedraw(False)
 
 newTree = tree([0,0,0], [100,100], 2, 1)
-newTree.render()
-#newTree.delete()
+newTree.makeBranches()
+print(len(newTree.branch))
+print(newTree.branch)
+#newTree.render()
+for br in newTree.branch:
+	newTree.renderBranch(br)
 
 rs.EnableRedraw(True)

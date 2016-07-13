@@ -79,6 +79,12 @@ class node:
 		return ptList
 	
 	def renderSubTree(self, startRadius, growthFactor, curveDegree):
+		#start radius is the radius at the tip of the smallest branches
+		#growth Factor is the factor by which the start radius grows
+		#as it moves towards the root, node by node
+		#curveDegree is the degree of the curves of the tree
+		
+		treeID = rs.AddGroup()
 		while True:
 			deepCh = self.deepestChild()
 			startNode = deepCh[0]
@@ -86,7 +92,7 @@ class node:
 				#this is the case where the whole tree is rendered
 				#later return the group id of the group
 				#that contains the whole tree from here
-				return True
+				return treeID
 			
 			curNode = startNode
 			nodeList = [startNode]
@@ -100,7 +106,30 @@ class node:
 				posList.append(nodeList[i].pos)
 				i += 1
 			
-			curveId = rs.AddCurve(posList,curveDegree)
+			curveID = rs.AddCurve(posList,curveDegree)
+			curDom = rs.CurveDomain(curveID)
+			node1 = rs.EvaluateCurve(curveID, curDom[0])
+			node2 = rs.EvaluateCurve(curveID, curDom[1])
+			tan1 = rs.CurveTangent(curveID, curDom[0])
+			tan2 = rs.CurveTangent(curveID, curDom[1])
+			
+			plane1 = rs.PlaneFromNormal(node1, tan1)
+			plane2 = rs.PlaneFromNormal(node2, tan2)
+			radius1 = startRadius
+			radius2 = (growthFactor**len(nodeList))*startRadius
+			
+			circles = []
+			circles.append(rs.AddCircle(plane1, radius1))
+			circles.append(rs.AddCircle(plane2, radius2))
+			
+			branch = rs.AddSweep1(curveID, circles, True)
+			
+			rs.AddObjectToGroup(branch, treeID)
+			
+			rs.DeleteObjects(circles)
+			rs.DeleteObject(curveID)
+			
+			
 			
 			for nd in nodeList:
 				nd.isDone = True
@@ -117,7 +146,7 @@ def grow(num):
 	#this method grows teh pointClooud represented by this list
 	if num == 0:
 		return 0
-	randPt = randomPt(-50,50,-50,50,0,100)
+	randPt = randomPt(-25,25,-25,25,0,50)
 	
 	joinNode = nodeList[rs.PointArrayClosestPoint(ptArray, randPt)]
 	joinPt = joinNode.pos
@@ -132,9 +161,9 @@ def grow(num):
 rs.EnableRedraw(False)
 root = node([0,0,0])
 
-g = grow(20)
+g = grow(400)
 
-root.renderSubTreeWF()
-root.renderSubTree(0.1, 1.2, 1)
+#root.renderSubTreeWF()
+root.renderSubTree(0.05, 1.04, 2)
 
 rs.EnableRedraw(True)

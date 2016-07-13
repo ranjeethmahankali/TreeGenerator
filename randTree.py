@@ -77,6 +77,33 @@ class node:
 			ptList = ch.childDoneStatus(ptList)
 		
 		return ptList
+	
+	def renderSubTree(self, startRadius, growthFactor, curveDegree):
+		while True:
+			deepCh = self.deepestChild()
+			startNode = deepCh[0]
+			if startNode == None:
+				#this is the case where the whole tree is rendered
+				#later return the group id of the group
+				#that contains the whole tree from here
+				return True
+			
+			curNode = startNode
+			nodeList = [startNode]
+			while (not curNode.parent is None) and (not curNode.isDone):
+				nodeList.append(curNode.parent)
+				curNode = curNode.parent
+			
+			posList = []
+			i = 0
+			while i < len(nodeList):
+				posList.append(nodeList[i].pos)
+				i += 1
+			
+			curveId = rs.AddCurve(posList,curveDegree)
+			
+			for nd in nodeList:
+				nd.isDone = True
 
 def randomPt(x1,x2,y1,y2,z1,z2):
 	px = random.uniform(x1,x2)
@@ -86,6 +113,8 @@ def randomPt(x1,x2,y1,y2,z1,z2):
 	return [px,py,pz]
 	
 def grow(num):
+	#this method grows the global ptArray list
+	#this method grows teh pointClooud represented by this list
 	if num == 0:
 		return 0
 	randPt = randomPt(-50,50,-50,50,0,100)
@@ -106,6 +135,6 @@ root = node([0,0,0])
 g = grow(20)
 
 root.renderSubTreeWF()
-deepCh = root.deepestChild()
+root.renderSubTree(0.1, 1.2, 1)
 
 rs.EnableRedraw(True)

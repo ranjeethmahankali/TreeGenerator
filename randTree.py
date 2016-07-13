@@ -32,39 +32,51 @@ class node:
 	def renderSubTreeWF(self):
 		#render the subtree starting at this node
 		#but renders just a wireframe
+		#WF stands for wireframe
 		for ch in self.child:
 			rs.AddLine(self.pos, ch.pos)
 			ch.renderSubTreeWF()
 	
 	def deepestChild(self, depth = 0):			
 		if len(self.child)  ==  0:
-			return [self,depth]
+			if self.isDone:
+				return [self.parent, 0]
+			else:
+				return [self,depth]
 		else:
-			maxDepth = depth
-			deepChild = self
-			for ch in self.child:
-				childDepth = ch.deepestChild(1+depth)
-				if maxDepth < childDepth[1]:
-					maxDepth = childDepth[1]
-					deepChild = childDepth[0]
-				
-			return [deepChild,maxDepth]
+			if self.isDone:
+				maxDepth = 0
+				deepChild = self.parent
+			else:
+				maxDepth = depth
+				deepChild = self
 			
-	def UnfDeepestChild(self, depth = 0):			
-		if len(self.child)  ==  0:
-			return [self,depth]
-		else:
-			maxDepth = depth
-			deepChild = self
 			for ch in self.child:
-				if ch.isDone == True:
-					continue
 				childDepth = ch.deepestChild(1+depth)
 				if maxDepth < childDepth[1]:
 					maxDepth = childDepth[1]
 					deepChild = childDepth[0]
 				
 			return [deepChild,maxDepth]
+	
+	def childDoneStatus(self, ptList = []):
+		#this method marks the isDone status of all the nodes of the subtree
+		#by marking the done nodes in red and others in blue
+		#this method also returns the list of the added point objects
+		#so that they can be easily removed
+		newPt = rs.AddPoint(self.pos)
+		if self.isDone:
+			#Add a red Point
+			rs.ObjectColor(newPt, (255,0,0))
+		else:
+			#Add a blue point
+			rs.ObjectColor(newPt, (0,0,255))
+		
+		ptList.append(newPt)
+		for ch in self.child:
+			ptList = ch.childDoneStatus(ptList)
+		
+		return ptList
 
 def randomPt(x1,x2,y1,y2,z1,z2):
 	px = random.uniform(x1,x2)
@@ -95,7 +107,5 @@ g = grow(20)
 
 root.renderSubTreeWF()
 deepCh = root.deepestChild()
-rs.AddPoint(deepCh[0].pos)
-print(deepCh)
 
 rs.EnableRedraw(True)

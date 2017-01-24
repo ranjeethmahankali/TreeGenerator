@@ -37,6 +37,8 @@ class node:
 			rs.AddLine(self.pos, ch.pos)
 			ch.renderSubTreeWF()
 	
+	#This returns the deepest (miximum generations down) descendant of this node that has not been
+	#drawn yet
 	def deepestChild(self, depth = 0):			
 		if len(self.child)  ==  0:
 			if self.isDone:
